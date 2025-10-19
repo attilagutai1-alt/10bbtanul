@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Póker Charts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #1a1a1a;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            touch-action: pan-y;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chart {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .chart.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .chart img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Chart indicator dots */
+        .indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .dot.active {
+            background: white;
+            width: 30px;
+            border-radius: 5px;
+        }
+
+        /* Chart label */
+        .chart-label {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 768px) {
+            .indicator {
+                bottom: 20px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chart-wrapper" id="chartWrapper">
+            <div class="chart active" data-index="0">
+                <img src="images/image1.png" alt="Chart 1">
+            </div>
+            <div class="chart" data-index="1">
+                <img src="images/image2.png" alt="Chart 2">
+            </div>
+        </div>
+
+        <div class="chart-label" id="chartLabel">Chart 1</div>
+
+        <div class="indicator" id="indicator">
+            <div class="dot active" onclick="goToChart(0)"></div>
+            <div class="dot" onclick="goToChart(1)"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentIndex = 0;
+        const charts = document.querySelectorAll('.chart');
+        const dots = document.querySelectorAll('.dot');
+        const chartLabel = document.getElementById('chartLabel');
+        const chartWrapper = document.getElementById('chartWrapper');
+
+        const chartLabels = ['Chart 1', 'Chart 2'];
+
+        function updateChart() {
+            charts.forEach((chart, index) => {
+                chart.classList.toggle('active', index === currentIndex);
+            });
+
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+            });
+
+            chartLabel.textContent = chartLabels[currentIndex];
+        }
+
+        function nextChart() {
+            currentIndex = (currentIndex + 1) % charts.length;
+            updateChart();
+        }
+
+        function prevChart() {
+            currentIndex = (currentIndex - 1 + charts.length) % charts.length;
+            updateChart();
+        }
+
+        function goToChart(index) {
+            currentIndex = index;
+            updateChart();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextChart();
+            if (e.key === 'ArrowLeft') prevChart();
+        });
+
+        // Touch/Swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        chartWrapper.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        chartWrapper.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left (balra húzás) - következő kép (jobbra lapoz)
+                    nextChart();
+                } else {
+                    // Swipe right (jobbra húzás) - előző kép (balra lapoz)
+                    prevChart();
+                }
+            }
+        }
+
+        // Prevent double-tap zoom on iOS
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
